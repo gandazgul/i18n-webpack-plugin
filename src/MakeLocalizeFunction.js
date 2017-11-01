@@ -1,34 +1,45 @@
 /**
+ * Convert the localization object into a function in case we need to support nested keys.
  *
- * @param {object}  localization
- * @returns {Function}
+ * @param {object} localization the language object,
+ * @param {boolean} nested
+ *
+ * @returns {function}
  */
 function makeLocalizeFunction(localization, nested) {
-  return function localizeFunction(key) {
-    return nested ? byString(localization, key) : localization[key];
-  };
+    return function localizeFunction(key) {
+        return nested ? byString(localization, key) : localization[key];
+    };
 }
 
 /**
+ * Find the key if the key is a path expressed with dots
  *
- * @param {object}  localization
- * @param {string}  string key
+ * e.g.
+ * Code: __("errors.connectionError")
+ * Lang: {"errors": {"connectionError": "There was an error connecting."}}
+ * New Code: "There was an error connecting."
+ *
+ * @param {object} localization
+ * @param {string} nestedKey The original key
+ *
  * @returns {*}
  */
-function byString(object, string) {
-  // strip a leading dot
-  const stringKey = string.replace(/^\./, '');
+function byString(localization, nestedKey) {
+    // strip a leading dot
+    const stringKey = nestedKey.replace(/^\./, '');
+    const keysArray = stringKey.split('.');
 
-  const keysArray = stringKey.split('.');
-  for (let i = 0, length = keysArray.length; i < length; ++i) {
-    const key = keysArray[i];
+    // loop through the keys to find the nested value
+    for (let i = 0, length = keysArray.length; i < length; ++i) {
+        const key = keysArray[i];
 
-    if (!(key in object)) return;
+        if (!(key in localization)) { return; }
 
-    object = object[key];
-  }
+        localization = localization[key];
+    }
 
-  return object;
+    return localization;
 }
 
-export default makeLocalizeFunction;
+module.exports = makeLocalizeFunction;
